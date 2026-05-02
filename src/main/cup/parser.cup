@@ -1,0 +1,119 @@
+package gt.edu.miumg;
+
+import java_cup.runtime.*;
+import java.util.ArrayList;
+
+class Parser;
+
+parser code {:
+
+    public static ArrayList<String> erroresSintacticos = new ArrayList<>();
+
+    public void agregarError(String descripcion, Symbol s) {
+        erroresSintacticos.add(String.format("%-35s %-10d %-10d %-30s",
+                descripcion,
+                s.left + 1,
+                s.right + 1,
+                s.value != null ? s.value.toString() : "?"
+        ));
+    }
+
+    // ERROR GENERAL
+@Override
+public void syntax_error(Symbol s) {
+
+    String token = (s.value != null) ? s.value.toString() : ParserSym.terminalNames[s.sym];
+    String error;
+
+    switch (s.sym) {
+
+        case ParserSym.PUNTO_COMA:
+            error = "Falta punto y coma";
+            break;
+
+        case ParserSym.PARENTESIS_C:
+            error = "Paréntesis sin abrir";
+            break;
+
+        case ParserSym.PARENTESIS_A:
+            error = "Paréntesis sin cerrar";
+            break;
+
+        default:
+            error = "Estructura incorrecta o incompleta";
+            break;
+    }
+
+    erroresSintacticos.add(String.format("%-35s %-10d %-10d %-20s",
+            error,
+            s.left + 1,
+            s.right + 1,
+            token
+    ));
+}
+
+    // ERROR CRÍTICO
+    @Override
+    public void unrecovered_syntax_error(Symbol s) {
+        agregarError("Error sintáctico crítico", s);
+    }
+:}
+
+// ----------- TERMINALES  -----------
+
+terminal INICIO, FIN;
+terminal CREAR_TAREA, ELIMINAR_TAREA, COMPLETAR;
+terminal MOSTRAR, MOSTRAR_TAREAS;
+terminal SI, ENTONCES, SINO;
+terminal MIENTRAS, HACER;
+terminal VERIFICAR, ESTADO, PENDIENTE, TERMINADA;
+terminal String ID;
+terminal String NUM;
+terminal String CADENA;
+
+terminal IGUAL, IGUAL_IGUAL, DIFERENTE, MAYOR, MENOR;
+
+terminal PUNTO_COMA, COMA, PARENTESIS_A, PARENTESIS_C;
+
+// ----------- NO TERMINALES -----------
+
+non terminal programa;
+non terminal lista_instrucciones;
+non terminal instruccion;
+non terminal condicion;
+// ----------- INICIO -----------
+
+start with programa;
+
+// ----------- PRODUCCIONES -----------
+
+programa ::= INICIO lista_instrucciones FIN
+            {: System.out.println("Programa válido"); :}   ;
+
+lista_instrucciones ::= lista_instrucciones instruccion | instruccion;
+
+instruccion ::= CREAR_TAREA ID COMA CADENA PUNTO_COMA  {: System.out.println("CREAR_TAREA ID COMA CADENA PUNTO_COMA" ); :}
+
+              | ELIMINAR_TAREA ID PUNTO_COMA           {: System.out.println("ELIMINAR_TAREA ID PUNTO_COMA "); :}
+
+              | COMPLETAR ID PUNTO_COMA                {: System.out.println("COMPLETAR ID PUNTO_COMA "); :}
+
+              | MOSTRAR_TAREAS PUNTO_COMA              {: System.out.println("Mostrar todas"); :}
+
+              | MOSTRAR ID PUNTO_COMA                  {: System.out.println("MOSTRAR ID PUNTO_COMA"); :}
+
+              | ID IGUAL ESTADO PENDIENTE PUNTO_COMA   {: System.out.println("ID IGUAL ESTADO PENDIENTE PUNTO_COMA"); :}
+
+              | ID IGUAL ESTADO TERMINADA PUNTO_COMA   {: System.out.println("ID IGUAL ESTADO TERMINADA PUNTO_COMA"); :}
+
+              | VERIFICAR PARENTESIS_A ID PARENTESIS_C PUNTO_COMA   {: System.out.println("VERIFICAR PARENTESIS_A ID PARENTESIS_C PUNTO_COMA"); :}
+
+              | SI condicion ENTONCES lista_instrucciones FIN       {: System.out.println("IF ejecutado"); :}
+
+              | MIENTRAS condicion HACER lista_instrucciones FIN    {: System.out.println("WHILE ejecutado"); :}  ;
+
+condicion ::= ID IGUAL_IGUAL ID
+            | ID DIFERENTE ID
+            | ID MAYOR ID
+            | ID MENOR ID
+            ;
